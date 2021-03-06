@@ -11,11 +11,19 @@ require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
 use DI\Container;
 
+// Старт PHP сессии
+session_start();
+
 $container = new Container();
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new \Slim\Views\PhpRenderer(__DIR__ . '/../templates');
 });
+
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
+
 $app = AppFactory::createFromContainer($container); // объект приложения с контейнером DI $container
 $app->addErrorMiddleware(true, true, true);
 
@@ -35,6 +43,7 @@ $app->get('/users/new', function ($request, $response) {
         'user' => ['name' => '', 'email' => '', 'password' => '', 'passwordConfirmation' => '', 'city' => ''],
         'errors' => []
     ];
+
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
 })->setName('users-new');
 
@@ -66,6 +75,12 @@ $app->get('/users', function ($request, $response ) use ($users) {
         'users' => $users,
         'name'  => $name ?? "",
     ];
+
+    // Извлечение flash сообщений установленных на предыдущем запросе
+    $messages = $this->get('flash')->getMessages(); //Array ( [success] => Array ( [0] => users/new This is a message ) )
+    print_r($messages); // => ['success' => ['This is a message']]
+    $params['flash'] = $messages;
+
     if(empty($users)) {
         return $this->get('renderer')->render($response, 'users/index.phtml', $params)->withStatus(404);
     }
@@ -93,6 +108,7 @@ $app->post('/users', function ($request, $response) use ($router) {
     // Пишем содержимое обратно в файл
     file_put_contents($file, $current);
 
+    $this->get('flash')->addMessage('success', 'users/new This is a message');
     return $response
         ->withHeader('Location', $router->urlFor('users'))
         ->withStatus(302);
