@@ -27,8 +27,23 @@ $app->get('/', function ($request, $response) {
     // return $response->write('Welcome to Slim!');
 });
 
-$app->get('/users', function ($request, $response) {
-    return $response->write('text -GET /users');
+$users = ['mike', 'Mishel', 'adel', 'keks', 'kamila'];
+$app->get('/users', function ($request, $response ) use ($users) {
+    $name = $request->getQueryParam('name', '');
+
+    //$res = stripos('mike', 'mi'); // stripos вернет позицию. тут 0. и в условии false будет хоть и нашел вхождение
+    //поэтому удобнее stristr - вернет строку или false
+    if (!empty($name)) {
+        $users = array_map(function ($user) use ($name) {
+            //return stripos($user, $name) !== false  ? $user : ''; // тоже рабочий !== FALSE  (recommended для stripos)
+            return stristr($user, $name) ? $user : '';
+        }, $users);
+    }
+    $params = [
+        'users' => $users,
+        'name'  => $name ?? "",
+    ];
+    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 });
 
 $app->post('/users', function ($request, $response) {
@@ -52,7 +67,7 @@ $app->get('/courses/{id}', function ($request, $response, array $args) {
     $id = $args['id'];
     return $response->write("Course id: {$id}");
 });
-
+/*
 $app->get('/users/{id}', function ($request, $response, $args) {
     $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
@@ -60,5 +75,5 @@ $app->get('/users/{id}', function ($request, $response, $args) {
     // $this в Slim это контейнер зависимостей
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 });
-
+*/
 $app->run();
