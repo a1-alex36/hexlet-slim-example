@@ -1,0 +1,5 @@
+{"name":"alex","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
+{"name":"alexMi","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
+{"name":"aleks","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
+{"name":"alex","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
+{"name":"alex2","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
