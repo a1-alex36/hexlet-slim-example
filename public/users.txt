@@ -3,3 +3,5 @@
 {"name":"aleks","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
 {"name":"alex","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
 {"name":"alex2","email":"asd@asd.asd","password":"asd","passwordConfirmation":"asd","city":""}
+{"name":"pimi","email":"asd@asd.asd","password":"sss","passwordConfirmation":"sss","city":""}
+{"name":"alexmi","email":"asd@asd.asd","password":"sss","passwordConfirmation":"sss","city":"3"}

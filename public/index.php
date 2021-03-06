@@ -19,13 +19,16 @@ $container->set('renderer', function () {
 $app = AppFactory::createFromContainer($container); // объект приложения с контейнером DI $container
 $app->addErrorMiddleware(true, true, true);
 
+// Получаем роутер – объект отвечающий за хранение и обработку маршрутов
+$router = $app->getRouteCollector()->getRouteParser();
+
 
 $app->get('/', function ($request, $response) {
     $response->getBody()->write('Welcome to Slim!');
     return $response;
     // Благодаря пакету slim/http этот же код можно записать короче
     // return $response->write('Welcome to Slim!');
-});
+})->setName('main');
 
 $app->get('/users/new', function ($request, $response) {
     $params = [
@@ -33,42 +36,45 @@ $app->get('/users/new', function ($request, $response) {
         'errors' => []
     ];
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
-});
+})->setName('users-new');
 
 $users = ['mike', 'Mishel', 'adel', 'keks', 'kamila'];
 // построчно в массив из файла
 $file = __DIR__ . '/users.txt';
 $current = file_get_contents($file);
 $current = explode(PHP_EOL, $current);
-//print_r($current);
+
 $users2 = array_map(function ($user) {
     //return json_decode($user)->name; // в объект
     return json_decode($user, true)["name"]; // в массив
 }, $current);
-//print_r($users2);
+
 $users = [...$users, ...$users2];
-//print_r($users);
+
 $app->get('/users', function ($request, $response ) use ($users) {
     $name = $request->getQueryParam('name', '');
 
     //$res = stripos('mike', 'mi'); // stripos вернет позицию. тут 0. и в условии false будет хоть и нашел вхождение
     //поэтому удобнее stristr - вернет строку или false
     if (!empty($name)) {
-        $users = array_map(function ($user) use ($name) {
+        $users = array_filter($users, function ($user) use ($name) {
             //return stripos($user, $name) !== false  ? $user : ''; // тоже рабочий !== FALSE  (recommended для stripos)
             return stristr($user, $name) ? $user : '';
-        }, $users);
+        } );
     }
     $params = [
         'users' => $users,
         'name'  => $name ?? "",
     ];
+    if(empty($users)) {
+        return $this->get('renderer')->render($response, 'users/index.phtml', $params)->withStatus(404);
+    }
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
-});
+})->setName('users');
 
 //$repo = new App\UserRepository();
 
-$app->post('/users', function ($request, $response) {
+$app->post('/users', function ($request, $response) use ($router) {
     //$validator = new Validator();
     $user = $request->getParsedBodyParam('user');
     /*$errors = $validator->validate($user);
@@ -88,7 +94,7 @@ $app->post('/users', function ($request, $response) {
     file_put_contents($file, $current);
 
     return $response
-        ->withHeader('Location', '/users')
+        ->withHeader('Location', $router->urlFor('users'))
         ->withStatus(302);
 });
 
@@ -104,12 +110,12 @@ $app->get('/courses', function ($request, $response) use ($courses) {
         'courses' => $courses
     ];
     return $this->get('renderer')->render($response, 'courses/index.phtml', $params);
-});
+})->setName('courses');
 
 $app->get('/courses/{id}', function ($request, $response, array $args) {
     $id = $args['id'];
     return $response->write("Course id: {$id}");
-});
+})->setName('course');
 
 $app->get('/users/{id}', function ($request, $response, $args) {
     $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
@@ -117,7 +123,7 @@ $app->get('/users/{id}', function ($request, $response, $args) {
     // $this доступен внутри анонимной функции благодаря https://php.net/manual/ru/closure.bindto.php
     // $this в Slim это контейнер зависимостей
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
-});
+})->setName('user');
 
 
 
