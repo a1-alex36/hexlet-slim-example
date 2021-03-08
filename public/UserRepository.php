@@ -69,5 +69,16 @@ class UserRepository
         }, []);
     }
 
+    public function save($userData)
+    {    //print_r($user);
+        $user = json_encode($userData); //json_decode
+        // Открываем файл для получения существующего содержимого
+        $current = file_get_contents(self::FILE_USERS);
+        // Добавляем нового человека в файл
+        $current .= $user . "\n";
+        // Пишем содержимое обратно в файл
+        file_put_contents(self::FILE_USERS, $current);
+    }
+
 
 }

@@ -46,12 +46,12 @@ $app->get('/users/new', function ($request, $response) {
     ];
 
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
-})->setName('users-new');
+})->setName('newUser');
 
 $repo = new \App02\UserRepository();
 
 $app->get('/users', function ($request, $response ) use ($repo) {
-    //для формы после отправки
+    //для формы поиска после отправки
     /*
     $name = $request->getQueryParam('name', '');
 
@@ -97,30 +97,51 @@ $app->get('/users/{id}', function ($request, $response , $args) use ($repo) {
     return $this->get('renderer')->render($response, 'user/show.phtml', $params);
 })->setName('user');
 
-$app->post('/users', function ($request, $response) use ($router) {
+$app->post('/users', function ($request, $response) use ($router, $repo) {
     //$validator = new Validator();
-    $user = $request->getParsedBodyParam('user');
-    /*$errors = $validator->validate($user);
-    if (count($errors) === 0) {
-        $repo->save($user);
-        return $response->withRedirect('/users', 302);
-    }
-    */
-    //print_r($user);
-    $user = json_encode($user); //json_decode
-    $file = __DIR__ . '/users.txt';
-    // Открываем файл для получения существующего содержимого
-    $current = file_get_contents($file);
-    // Добавляем нового человека в файл
-    $current .= $user . "\n";
-    // Пишем содержимое обратно в файл
-    file_put_contents($file, $current);
+    // Извлекаем данные формы
+    $userData = $request->getParsedBodyParam('user');
 
-    $this->get('flash')->addMessage('success', 'users/new This is a message');
+    // Проверяем корректность данных
+    $validator = new \App02\Validator();
+    $errors = $validator->validate($userData);
+
+    if (count($errors) === 0) {
+        // Если данные корректны, то сохраняем, добавляем флеш и выполняем редирект
+        $repo->save($userData);
+        $this->get('flash')->addMessage('success', 'My Users has been created');
+        // Обратите внимание на использование именованного роутинга
+        $url = $router->urlFor('users');
+        return $response->withRedirect($url);
+    }
+
+    $params = [
+        'user' => $userData,
+        'errors' => $errors
+    ];
+
+    // Если возникли ошибки, то устанавливаем код ответа в 422 и рендерим форму с указанием ошибок
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'users/new.phtml', $params);
+
+    /*$this->get('flash')->addMessage('success', 'users/new This is a message');
     return $response
         ->withHeader('Location', $router->urlFor('users'))
         ->withStatus(302);
+    */
 });
+
+
+$app->get('/users/{id}/edit', function ($request, $response, array $args) use ($repo) {
+    $id = $args['id'];
+    $user = $repo->findById($id);
+    $params = [
+        'user' => $user,
+        'errors' => []
+    ];
+    return $this->get('renderer')->render($response, 'user/edit.phtml', $params);
+})->setName('editUser');
+
 
 //$courses = ["mat", "lit"];
 $courses = [
