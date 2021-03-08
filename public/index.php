@@ -1,15 +1,16 @@
 <?php
-// Подключение автозагрузки через composer
-require __DIR__ . '/../vendor/autoload.php';
 
 //use Slim\Factory\AppFactory;
-
 //$app = AppFactory::create();  // объект приложения без контейнера
 //$app->addErrorMiddleware(true, true, true);
 
-// Контейнеры в этом курсе не рассматриваются (это тема связанная с самим ООП), но если вам интересно, то посмотрите DI Container
+namespace App02;
+// Подключение автозагрузки через composer
+require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
+// Контейнеры в этом курсе не рассматриваются (это тема связанная с самим ООП), но если вам интересно, то посмотрите DI Container
 use DI\Container;
+//use App02\UserRepository;
 
 // Старт PHP сессии
 session_start();
@@ -47,20 +48,11 @@ $app->get('/users/new', function ($request, $response) {
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
 })->setName('users-new');
 
-$users = ['mike', 'Mishel', 'adel', 'keks', 'kamila'];
-// построчно в массив из файла
-$file = __DIR__ . '/users.txt';
-$current = file_get_contents($file);
-$current = explode(PHP_EOL, $current);
+$repo = new \App02\UserRepository();
 
-$users2 = array_map(function ($user) {
-    //return json_decode($user)->name; // в объект
-    return json_decode($user, true)["name"]; // в массив
-}, $current);
-
-$users = [...$users, ...$users2];
-
-$app->get('/users', function ($request, $response ) use ($users) {
+$app->get('/users', function ($request, $response ) use ($repo) {
+    //для формы после отправки
+    /*
     $name = $request->getQueryParam('name', '');
 
     //$res = stripos('mike', 'mi'); // stripos вернет позицию. тут 0. и в условии false будет хоть и нашел вхождение
@@ -69,8 +61,12 @@ $app->get('/users', function ($request, $response ) use ($users) {
         $users = array_filter($users, function ($user) use ($name) {
             //return stripos($user, $name) !== false  ? $user : ''; // тоже рабочий !== FALSE  (recommended для stripos)
             return stristr($user, $name) ? $user : '';
-        } );
+        });
     }
+    */
+
+    $users = $repo->all();
+
     $params = [
         'users' => $users,
         'name'  => $name ?? "",
@@ -78,7 +74,7 @@ $app->get('/users', function ($request, $response ) use ($users) {
 
     // Извлечение flash сообщений установленных на предыдущем запросе
     $messages = $this->get('flash')->getMessages(); //Array ( [success] => Array ( [0] => users/new This is a message ) )
-    print_r($messages); // => ['success' => ['This is a message']]
+    //print_r($messages); // => ['success' => ['This is a message']]
     $params['flash'] = $messages;
 
     if(empty($users)) {
@@ -87,7 +83,19 @@ $app->get('/users', function ($request, $response ) use ($users) {
     return $this->get('renderer')->render($response, 'users/index.phtml', $params);
 })->setName('users');
 
-//$repo = new App\UserRepository();
+$app->get('/users/{id}', function ($request, $response , $args) use ($repo) {
+    $id = $args['id'];
+    $user = $repo->findById($id);
+    $params = [
+        'user' => $user
+    ];
+
+    if (empty($user)) {
+        return $response->write('Page not found')
+            ->withStatus(404);
+    }
+    return $this->get('renderer')->render($response, 'user/show.phtml', $params);
+})->setName('user');
 
 $app->post('/users', function ($request, $response) use ($router) {
     //$validator = new Validator();
@@ -132,7 +140,7 @@ $app->get('/courses/{id}', function ($request, $response, array $args) {
     $id = $args['id'];
     return $response->write("Course id: {$id}");
 })->setName('course');
-
+/*
 $app->get('/users/{id}', function ($request, $response, $args) {
     $params = ['id' => $args['id'], 'nickname' => 'user-' . $args['id']];
     // Указанный путь считается относительно базовой директории для шаблонов, заданной на этапе конфигурации
@@ -140,7 +148,10 @@ $app->get('/users/{id}', function ($request, $response, $args) {
     // $this в Slim это контейнер зависимостей
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
 })->setName('user');
-
-
-
+*/
 $app->run();
+
+/*
+ * Приведите маршруты и их имена в соответствии с указанной выше схемой.
+Переделайте получение пользователей так, чтобы данные о пользователях брались из файла. Не забудьте предотвратить XSS.
+ * */

@@ -1,0 +1,6 @@
+<?php //print_r($user); ?>
+<?php foreach ($user as $user): ?>
+    <div>
+        <?= $user["id"] ?>: <?= htmlspecialchars($user["name"]) ?>
+    </div>
+<?php endforeach ?>
