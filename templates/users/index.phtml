@@ -3,6 +3,8 @@
         <tr>
             <td>
                 <a href="/users/<?= $user["id"] ?>"><?= htmlspecialchars($user["name"]) ?></a>
+                <span>|</span>
+                <a href="/users/<?= $user["id"] ?>/edit">edit <?= htmlspecialchars($user["name"]) ?></a>
             </td>
         </tr>
     <?php endforeach ?>

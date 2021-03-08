@@ -12,8 +12,8 @@ class Validator
     public function validate($data): array
     {
         // все непустые
-
+        return [];
         //return [5];
-        return ['email' => "bad adress", 'password' => "ne olo passwords"];
+        //return ['email' => "bad adress", 'password' => "ne olo passwords"];
     }
 }

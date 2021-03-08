@@ -8,6 +8,7 @@ namespace App02;
 // Подключение автозагрузки через composer
 require __DIR__ . '/../vendor/autoload.php';
 use Slim\Factory\AppFactory;
+use Slim\Middleware\MethodOverrideMiddleware;
 // Контейнеры в этом курсе не рассматриваются (это тема связанная с самим ООП), но если вам интересно, то посмотрите DI Container
 use DI\Container;
 //use App02\UserRepository;
@@ -27,6 +28,7 @@ $container->set('flash', function () {
 
 $app = AppFactory::createFromContainer($container); // объект приложения с контейнером DI $container
 $app->addErrorMiddleware(true, true, true);
+$app->add(MethodOverrideMiddleware::class); // включить поддержку переопределения метода в самом Slim
 
 // Получаем роутер – объект отвечающий за хранение и обработку маршрутов
 $router = $app->getRouteCollector()->getRouteParser();
@@ -131,17 +133,61 @@ $app->post('/users', function ($request, $response) use ($router, $repo) {
     */
 });
 
-
 $app->get('/users/{id}/edit', function ($request, $response, array $args) use ($repo) {
     $id = $args['id'];
     $user = $repo->findById($id);
+
     $params = [
         'user' => $user,
         'errors' => []
     ];
+
+    // Извлечение flash сообщений установленных на предыдущем запросе
+    $messages = $this->get('flash')->getMessages();
+    $params['flash'] = $messages;
+
     return $this->get('renderer')->render($response, 'user/edit.phtml', $params);
 })->setName('editUser');
 
+$app->patch('/users/{id}', function ($request, $response, array $args) use ($repo, $router) {
+    $id = $args['id'];
+    $user = $repo->findById($id);
+    $data = $request->getParsedBodyParam('user');
+
+
+    $validator = new \App02\Validator();
+    $errors = $validator->validate($data);
+    if (count($errors) === 0) {
+        // Ручное копирование данных из формы в нашу сущность
+        $user['id']   = $id;
+        $user['name'] = $data['name'];
+        $user['email'] = $data['email'];
+        $user['password'] = $data['password'];
+        $user['passwordConfirmation'] = $data['passwordConfirmation'];
+        $user['city'] = $data['city'];
+
+        $this->get('flash')->addMessage('success', 'user has been updated');
+        //print_r($user); die;
+        $repo->save($user, $id);
+        $url = $router->urlFor('editUser', ['id' => $user['id']]);
+        return $response->withRedirect($url);
+    }
+    $params = [
+        'userData' => $data,
+        'user' => $user,
+        'errors' => $errors
+    ];
+
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'user/edit.phtml', $params);
+});
+
+$app->delete('/users/{id}', function ($request, $response , $args) use ($repo , $router) {
+    $id = $args['id'];
+    $repo->destroy($id);
+    $this->get('flash')->addMessage('success', 'Userse has been deleted');
+    return $response->withRedirect($router->urlFor('users'));
+})->setName('delUser');
 
 //$courses = ["mat", "lit"];
 $courses = [

@@ -16,7 +16,7 @@ class UserRepository
     {
         // построчно в массив из файла
         $current = file_get_contents(self::FILE_USERS);
-        $current = explode(PHP_EOL, $current);
+        $current = explode(PHP_EOL, $current, -1);
 
         $users2 = array_map(function ($user) {
             //return json_decode($user)->name; // в объект
@@ -61,7 +61,7 @@ class UserRepository
             // последнее совпадение - многом. массив // [$user]   // Array([0] => Array(...val...)) // новый массив каждый раз, перезатирает
             // все совпадения, аналог верхнего ифа   // [...$res, $user] // Array([0] => Array(...val...), [1] => Array(...val...))
             //print_r($res);
-            return $user["id"] == $id ? [$user] : $res;
+            return $user["id"] == $id ? $user : $res;
             // что выбирать ? по логике что ожидаем.?
             // $user .точно один из БД по ИД например? - зная что в БД оно точно одно
             // [$user] последний из подходящих. сортировка играет рольтогда. устраивает она?
@@ -69,16 +69,71 @@ class UserRepository
         }, []);
     }
 
-    public function save($userData)
+    public function save($user, $id = null)
     {    //print_r($user);
-        $user = json_encode($userData); //json_decode
+        /*обновление для файлов
+        - найти тот что обновляем findById
+        - проход по всем строкам
+        - как дошли до нужной (сравнить по ИД), то записать новые данные
+        - далее запись до конца старых
+        */
+
+        $user["id"] = $id ?? rand(500, 999);
+        $user = json_encode($user); //json_decode
         // Открываем файл для получения существующего содержимого
         $current = file_get_contents(self::FILE_USERS);
         // Добавляем нового человека в файл
-        $current .= $user . "\n";
+        //print_r($current); die;
+
+        if(!empty($id)) {
+            //print_r($current); die;
+            $current = explode(PHP_EOL, $current, -1); // кроме последнего эл-та
+            $current = array_reduce( $current, function ($res, $item) use ($user, $id) {
+                $item = json_decode($item, true); // для сравнения ИДшников приходится делать декод
+                /*
+                if($item["id"] == $id) {
+                    $res[] =  $user . "\n";
+                } else {
+                    $res[] = json_encode($item) . "\n";
+                }
+                return $res;
+                */
+                // аналог этого ифа
+                return $item["id"] == $id ? [...$res, $user . "\n"] : [...$res, json_encode($item) . "\n"];
+            }, []);
+        } else {
+            $current .= $user . "\n";
+        }
+
         // Пишем содержимое обратно в файл
         file_put_contents(self::FILE_USERS, $current);
     }
 
+    public function destroy($id)
+    {
+        /*удаление для файлов
+        также как редактирование
+        + не записывать вообще как дошли до нужной
+        - далее запись до конца старых строк
+        */
+
+        // Открываем файл для получения существующего содержимого
+        $current = file_get_contents(self::FILE_USERS);
+
+        if(!empty($id)) {
+            //print_r($current); die;
+            $current = explode(PHP_EOL, $current, -1); // кроме последнего эл-та
+            $current = array_reduce( $current, function ($res, $item) use ($id) {
+                $item = json_decode($item, true);
+                if($item["id"] != $id) {
+                    $res[] = json_encode($item) . "\n";
+                }
+                return $res;
+            }, []);
+        }
+
+        // Пишем содержимое обратно в файл
+        file_put_contents(self::FILE_USERS, $current);
+    }
 
 }

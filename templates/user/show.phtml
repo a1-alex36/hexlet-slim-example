@@ -1,6 +1,13 @@
 <?php //print_r($user); ?>
-<?php foreach ($user as $user): ?>
+<h3>Показать</h3>
     <div>
         <?= $user["id"] ?>: <?= htmlspecialchars($user["name"]) ?>
+        <span>|</span>
+        <a href="/users/<?= $user["id"] ?>/edit">edit <?= htmlspecialchars($user["name"]) ?></a>
     </div>
-<?php endforeach ?>
+
+<h3>Удаление</h3>
+<form action="/users/<?= $user['id'] ?>" method="post">
+    <input type="hidden" name="_METHOD" value="DELETE">
+    <input type="submit" value="Remove">
+</form>
