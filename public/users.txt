@@ -5,4 +5,3 @@
 {"id":"11","name":"alex22-2","email":"asd@asd.asd","password":"22","passwordConfirmation":"22","city":"3"}
 {"id":"12","name":"alexMi1222","email":"asd@asd.asd12","password":"asd","passwordConfirmation":"asd","city":""}
 {"name":"alexmi38","email":"asd@asd.asd662","password":"88","passwordConfirmation":"88","city":"","id":"661"}
-{"name":"alexmi3333","email":"asd@asd.asd","password":"33","passwordConfirmation":"33","city":"399","id":904}

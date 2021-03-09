@@ -33,7 +33,6 @@ $app->add(MethodOverrideMiddleware::class); // включить поддержк
 // Получаем роутер – объект отвечающий за хранение и обработку маршрутов
 $router = $app->getRouteCollector()->getRouteParser();
 
-
 $app->get('/', function ($request, $response) {
     $response->getBody()->write('Welcome to Slim!');
     return $response;
@@ -50,7 +49,8 @@ $app->get('/users/new', function ($request, $response) {
     return $this->get('renderer')->render($response, "users/new.phtml", $params);
 })->setName('newUser');
 
-$repo = new \App02\UserRepository();
+//$repo = new \App02\UserRepository(); //на файлах
+$repo = new \App02\UserRepositoryCookies();
 
 $app->get('/users', function ($request, $response ) use ($repo) {
     //для формы поиска после отправки
@@ -67,7 +67,9 @@ $app->get('/users', function ($request, $response ) use ($repo) {
     }
     */
 
-    $users = $repo->all();
+    //$users = $repo->all(); // на файлах
+    $users = json_decode($request->getCookieParam('users', json_encode([])), true);
+    //print_r($users); die;
 
     $params = [
         'users' => $users,
@@ -87,7 +89,12 @@ $app->get('/users', function ($request, $response ) use ($repo) {
 
 $app->get('/users/{id}', function ($request, $response , $args) use ($repo) {
     $id = $args['id'];
-    $user = $repo->findById($id);
+
+    //на куках
+    $usersCookie = $request->getCookieParam('users', json_encode([]));
+    $user = $repo->findById($id, $usersCookie);
+
+    //$user = $repo->findById($id); // на файлах
     $params = [
         'user' => $user
     ];
@@ -110,11 +117,18 @@ $app->post('/users', function ($request, $response) use ($router, $repo) {
 
     if (count($errors) === 0) {
         // Если данные корректны, то сохраняем, добавляем флеш и выполняем редирект
-        $repo->save($userData);
+        //на куках
+        $usersCookie = $request->getCookieParam('users', json_encode([]));
+        $encodedUsers = $repo->save($userData, $usersCookie);
+
+        //на файлах
+        //$repo->save($userData);
+
         $this->get('flash')->addMessage('success', 'My Users has been created');
-        // Обратите внимание на использование именованного роутинга
         $url = $router->urlFor('users');
-        return $response->withRedirect($url);
+        //return $response->withRedirect($url); // на файлах
+        return $response->withHeader('Set-Cookie', "users={$encodedUsers}; Path=/")
+            ->withRedirect($url); //на куках // Path чтобы не создавал куку на каждый адрес, а только на корень /
     }
 
     $params = [
@@ -135,7 +149,11 @@ $app->post('/users', function ($request, $response) use ($router, $repo) {
 
 $app->get('/users/{id}/edit', function ($request, $response, array $args) use ($repo) {
     $id = $args['id'];
-    $user = $repo->findById($id);
+
+    //на куках
+    $usersCookie = $request->getCookieParam('users', json_encode([]));
+    $user = $repo->findById($id, $usersCookie);
+    //$user = $repo->findById($id); //на куках
 
     $params = [
         'user' => $user,
@@ -151,7 +169,11 @@ $app->get('/users/{id}/edit', function ($request, $response, array $args) use ($
 
 $app->patch('/users/{id}', function ($request, $response, array $args) use ($repo, $router) {
     $id = $args['id'];
-    $user = $repo->findById($id);
+    //$user = $repo->findById($id); //на файлах
+    //на куках
+    $usersCookie = $request->getCookieParam('users', json_encode([]));
+    $user = $repo->findById($id, $usersCookie);
+
     $data = $request->getParsedBodyParam('user');
 
 
@@ -168,9 +190,12 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rep
 
         $this->get('flash')->addMessage('success', 'user has been updated');
         //print_r($user); die;
-        $repo->save($user, $id);
+        //$repo->save($user,$usersCookie, $id); // на файлах
+        $encodedUsers = $repo->save($user,$usersCookie, $id);
         $url = $router->urlFor('editUser', ['id' => $user['id']]);
-        return $response->withRedirect($url);
+        //return $response->withRedirect($url); // на файлах
+        return $response->withHeader('Set-Cookie', "users={$encodedUsers}; Path=/")
+            ->withRedirect($url); //на куках
     }
     $params = [
         'userData' => $data,
@@ -184,9 +209,17 @@ $app->patch('/users/{id}', function ($request, $response, array $args) use ($rep
 
 $app->delete('/users/{id}', function ($request, $response , $args) use ($repo , $router) {
     $id = $args['id'];
-    $repo->destroy($id);
+    // алерт добавить в шаблон
+    //$repo->destroy($id); //на ф
+
+    //на куках
+    $usersCookie = $request->getCookieParam('users', json_encode([]));
+    $encodedUsers = $repo->destroy($id, $usersCookie);
+
     $this->get('flash')->addMessage('success', 'Userse has been deleted');
-    return $response->withRedirect($router->urlFor('users'));
+    //return $response->withRedirect($router->urlFor('users'));
+    return $response->withHeader('Set-Cookie', "users={$encodedUsers}; Path=/")
+        ->withRedirect($router->urlFor('users')); //на куках
 })->setName('delUser');
 
 //$courses = ["mat", "lit"];
