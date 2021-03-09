@@ -29,6 +29,15 @@ class UserRepositoryCookies
         // map вернет  структуру с индекс массивом
         // фильтр вернет туже структуру
     }
+    public function findByEmail( string $email, $usersCookie )
+    {
+        $usersCookie = json_decode($usersCookie, true);
+
+        return array_reduce($usersCookie, function ($res, $user) use ($email) {
+            return $user["email"] == $email ? $user : $res;
+        }, []);
+    }
+
 
     public function save($user, $usersCookie, $id = null)
     {
@@ -64,6 +73,5 @@ class UserRepositoryCookies
         }
         return json_encode($usersCookie);
     }
-
 
 }

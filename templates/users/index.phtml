@@ -16,3 +16,25 @@
 </form>
 <!-- END -->
 <h3><?php $flash ? print_r($flash) : ''; ?></h3>
+
+<form action="/auth" method="post">
+    <input type="email" required name="auth[email]" value="<?= htmlspecialchars($auth['email']) ?>">
+    <?php if (isset($errors['authemail'])): ?>
+        <div><?= $errors['authemail'] ?></div>
+    <?php endif ?>
+    <input type="submit" value="Login" />
+</form>
+
+<?php print_r($_SESSION); ?>
+<?php /* if(isset($user)): ?>
+    <div>Залогинен товарищ <?= $user['email'] ?></div>
+<?php else: ?>
+    <form action="/auth" method="post">
+        <input type="email" required name="auth[email]" value="<?= htmlspecialchars($auth['email']) ?>">
+        <?php if (isset($errors['authemail'])): ?>
+            <div><?= $errors['authemail'] ?></div>
+        <?php endif ?>
+        <input type="submit" value="Login" />
+    </form>
+<?php endif; */ ?>
+

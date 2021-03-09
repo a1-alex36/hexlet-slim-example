@@ -222,6 +222,48 @@ $app->delete('/users/{id}', function ($request, $response , $args) use ($repo , 
         ->withRedirect($router->urlFor('users')); //на куках
 })->setName('delUser');
 
+$app->post('/auth', function ($request, $response) use ($router, $repo) {
+    //$validator = new Validator();
+    // Извлекаем данные формы
+    $authData = $request->getParsedBodyParam('auth');
+    //print_r($authData); die;
+
+    // Проверяем корректность данных
+    $validator = new \App02\Validator();
+    $errors = $validator->validate($authData);
+
+    $email = $authData['email'];
+    //на куках
+    $usersCookie = $request->getCookieParam('users', json_encode([]));
+    $userAuth = $repo->findByEmail($email, $usersCookie);
+
+    if (!empty($userAuth)) {
+
+        $this->get('flash')->addMessage('success', 'Login has been');
+        //$url = $router->urlFor('users', ['id' => $userAuth['id']]);
+        // Добавление нового товара
+        $_SESSION['Auth'][] = $userAuth;
+        $url = $router->urlFor('users', ['userData' => $userAuth]);
+        return $response->withRedirect($url);
+    }
+
+    $params = [
+        'auth' => $authData,
+        //'user' => $user,
+        'errors' => [$errors, "authemail" => "нет емейла такого"]
+    ];
+
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
+
+});
+
+/*
+ * выход
+    $_SESSION = []
+ * */
+
+
 //$courses = ["mat", "lit"];
 $courses = [
     ["id" => 1,"name" => "math"],
